@@ -103,6 +103,9 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_setnice(void);//20193062
+extern int sys_getnice(void);//20193062
+extern int sys_ps(void);//20193062
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -126,6 +129,9 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_setnice]   sys_setnice,//20193062
+[SYS_getnice]   sys_getnice,//20193062
+[SYS_ps]        sys_ps,//20193062
 };
 
 void

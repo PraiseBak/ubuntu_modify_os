@@ -23,6 +23,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int setnice(int, int);//20193062
+int getnice(int);//20193062
+void ps(int);//20193062
 
 // ulib.c
 int stat(const char*, struct stat*);

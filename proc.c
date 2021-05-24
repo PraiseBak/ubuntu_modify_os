@@ -11,7 +11,6 @@ struct {
   struct spinlock lock;
   struct proc proc[NPROC];
 } ptable;
-
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -25,6 +24,7 @@ pinit(void)
 {
   initlock(&ptable.lock, "ptable");
 }
+//테스22트
 
 // Must be called with interrupts disabled
 int
@@ -138,6 +138,7 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
+  p->nice = 20; //20193062
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -198,6 +199,7 @@ fork(void)
   }
   np->sz = curproc->sz;
   np->parent = curproc;
+  np->nice = curproc->nice; // 20193062
   *np->tf = *curproc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
@@ -532,3 +534,74 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int//20193062
+setnice(int pid, int nicevalue)//20193062
+{//20193062
+  struct proc *p;//20193062
+  acquire(&ptable.lock);//20193062
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)//20193062
+  {//20193062
+    if(p->pid == pid && p->pid != 0)//20193062
+    {  //20193062
+        p->nice = nicevalue;//20193062
+		release(&ptable.lock); //20193062
+        return 0;//20193062
+    }//20193062
+  }//20193062
+  release(&ptable.lock); //20193062
+  return -1;//20193062
+}
+
+int//20193062
+getnice(int pid)//20193062
+{//20193062
+  struct proc *p;//20193062
+  acquire(&ptable.lock); //20193062
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)//20193062
+  {//20193062
+	if(p->pid == 0)//20193062
+	{ //20193062
+		break;//20193062
+	}//20193062
+    if(p->pid == pid)//20193062
+	{//20193062
+		release(&ptable.lock); //20193062
+		return p->nice;//20193062
+	}//20193062
+  }//20193062
+  release(&ptable.lock); //20193062
+  return -1; //20193062
+}//20193062
+
+void//20193062
+ps(int pid)//20193062
+{//20193062
+  struct proc *p;//20193062
+  int tmp_ppid;//20193062
+  acquire(&ptable.lock);//20193062
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)//20193062
+  {//20193062
+	tmp_ppid = p->parent->pid;//20193062
+	if(p->pid == 1)//20193062
+	{//20193062
+		tmp_ppid = 0;//20193062
+	}//20193062
+    
+	if(p->pid == 0)//20193062
+	{//20193062
+		break; //20193062
+	} //20193062
+	else if(pid == 0 || p->pid == pid) //20193062
+	{ //20193062
+		cprintf("pid : %d ppid : %d nice : %d status : %d name : %s\n",p->pid,tmp_ppid,p->nice,p->state,p->name); //20193062
+		if(pid != 0) //20193062 이 경우 일치하는 pid를 찾았고 pid는 0이 아니므로 한개만 출력 후종료해야함
+		{ //20193062
+			break; //20193062
+		} //20193062
+	} //20193062
+  } //20193062
+  release(&ptable.lock);//20193062
+}//20193062
+

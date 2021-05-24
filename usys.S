@@ -29,3 +29,6 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(setnice)//20193062
+SYSCALL(getnice)//20193062
+SYSCALL(ps)//20193062

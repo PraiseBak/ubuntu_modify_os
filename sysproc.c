@@ -89,3 +89,36 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+int //20193062
+sys_setnice() //20193062
+{//20193062
+  int pid,nicevalue;//20193062
+  if(argint(0,&pid) < 0)//20193062
+	  return -1;//20193062
+  if(argint(1,&nicevalue) < 0)//20193062
+	  return -1;//20193062
+  if((0<=nicevalue) && (nicevalue<=40))//20193062
+  {//20193062
+    return setnice(pid, nicevalue);//20193062
+  }//20193062
+  return -1;//20193062
+}//20193062
+
+int//20193062
+sys_getnice()//20193062
+{//20193062
+  int pid;//20193062
+  if(argint(0,&pid) < 0)//20193062
+	return -1;//20193062
+  return getnice(pid);//20193062
+}//20193062
+
+int//20193062
+sys_ps()//20193062
+{//20193062
+  int pid;//20193062
+  if(argint(0,&pid) < 0)//20193062
+    return -1;//20193062
+  ps(pid);//20193062
+  return 0; //20193062
+}//20193062 
