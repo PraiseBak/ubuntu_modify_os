@@ -9,10 +9,10 @@
 #include "mmu.h"
 #include "spinlock.h"
 
+
 void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
 int numfreepages=0;
-
 struct run {
   struct run *next;
 };
@@ -21,6 +21,7 @@ struct {
   struct spinlock lock;
   int use_lock;
   struct run *freelist;
+  uint pgrefcount[PHYSTOP >> PGSHIFT]; //20193062 페이지는 총 917,504개
 } kmem;
 
 // Initialization happens in two phases.
@@ -48,7 +49,8 @@ freerange(void *vstart, void *vend)
 {
   char *p;
   p = (char*)PGROUNDUP((uint)vstart);
-  for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
+  for(; p + PGSIZE <= (char*)vend; p += PGSIZE
+    kmem.pgrefcounter[(uint)p/(uint)PGSIZE] = 0; //20193062 범위안의 refcounter를 0으로 초기화해줌 p/PGSIZE는 인덱스
     kfree(p);
 }
 
@@ -70,10 +72,17 @@ kfree(char *v)
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
-  numfreepages++;
-  r = (struct run*)v;
-  r->next = kmem.freelist;
-  kmem.freelist = r;
+  if(kmem.pgrefcounter[(uint)p/(uint)PGSIZE] != 0)	//20193062 0인경우는 맨 처음 초기화된 경우
+  {	//20193062
+    kmem.pgrefcounter[(uint)p/(uint)PGSIZE]--; 	//20193062 counter 감소
+  }	//20193062
+  if(kmem.pgrefcounter[(uint)p/(uint)PGSIZE] == 0) //20193062 0이 됐다면 프리리스트에 추가
+  {
+    r = (struct run*)v; //20193062 프리리스트 참조 변수
+    r->next = kmem.freelist;	//20193062 프리리스트추가
+    kmem.freelist = r;	//20193062 프리리스트 추가
+    numfreepages++; //20193062 프리리스트가 추가됐으므로 개수도 증가
+  }  //20193062
   if(kmem.use_lock)
     release(&kmem.lock);
 }
@@ -85,18 +94,38 @@ char*
 kalloc(void)
 {
   struct run *r;
-
   if(kmem.use_lock)
     acquire(&kmem.lock);
   numfreepages--;
   r = kmem.freelist;
   if(r)
     kmem.freelist = r->next;
+    kmem.pgrefcounter[PHYSTOP<<PGSHIFT - numfreepages] = 1;	//20193062 총 페이지크기에서 할당가능한 페이지 개수 = 이번에 할당되는 페이지 인덱스. 배열 인덱스 이므로 -된 뒤 값 할당이 옳다..:
   if(kmem.use_lock)
     release(&kmem.lock);
-  return (char*)r;
+    return (char*)r;
 }
 
 int freemem(){
 	return numfreepages;
+}
+
+
+
+uint get_refcounter(uint pa)	//20193062 pa가 속한 물리 페이지의 reference counter 반환
+{
+	char * P2V(pa);
+	
+	
+}
+
+void dec_refcounter(uint pa)	//20193062 pa가 속한 물리 페이지의 reference counter 감소
+{
+
+
+}
+
+void inc_refcounter(uint pa)	//20193062 pa가 속한 물리 페이지의 reference counter 증가
+{	
+
 }
