@@ -100,7 +100,7 @@ char*
 kalloc(void)
 {
   struct run *r;
-  uint idx = 0   //20193062 몇번째 페이지인지 인덱스 가져오기 위한 변수
+  uint idx = 0;   //20193062 몇번째 페이지인지 인덱스 가져오기 위한 변수
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
