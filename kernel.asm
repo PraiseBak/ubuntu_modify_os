@@ -6291,104 +6291,104 @@ kfree(char *v)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
-801022c3:	83 ec 04             	sub    $0x4,%esp
-801022c6:	68 00 10 00 00       	push   $0x1000
-801022cb:	6a 01                	push   $0x1
-801022cd:	53                   	push   %ebx
-801022ce:	e8 3d 22 00 00       	call   80104510 <memset>
   
   if(kmem.use_lock)
-801022d3:	8b 15 94 26 11 80    	mov    0x80112694,%edx
-801022d9:	83 c4 10             	add    $0x10,%esp
-801022dc:	85 d2                	test   %edx,%edx
-801022de:	75 70                	jne    80102350 <kfree+0xc0>
+801022c3:	8b 15 94 26 11 80    	mov    0x80112694,%edx
+801022c9:	85 d2                	test   %edx,%edx
+801022cb:	0f 85 7f 00 00 00    	jne    80102350 <kfree+0xc0>
     acquire(&kmem.lock);
   pgrefcount[(v-end)/PGSIZE]--;  //20193062
-801022e0:	89 da                	mov    %ebx,%edx
-801022e2:	81 ea 48 d5 14 80    	sub    $0x8014d548,%edx
-801022e8:	8d 82 ff 0f 00 00    	lea    0xfff(%edx),%eax
-801022ee:	85 d2                	test   %edx,%edx
-801022f0:	0f 49 c2             	cmovns %edx,%eax
-801022f3:	c1 f8 0c             	sar    $0xc,%eax
-801022f6:	8b 0c 85 a0 26 11 80 	mov    -0x7feed960(,%eax,4),%ecx
-801022fd:	8d 51 ff             	lea    -0x1(%ecx),%edx
+801022d1:	89 da                	mov    %ebx,%edx
+801022d3:	81 ea 48 d5 14 80    	sub    $0x8014d548,%edx
+801022d9:	8d 82 ff 0f 00 00    	lea    0xfff(%edx),%eax
+801022df:	85 d2                	test   %edx,%edx
+801022e1:	0f 49 c2             	cmovns %edx,%eax
+801022e4:	c1 f8 0c             	sar    $0xc,%eax
+801022e7:	8b 0c 85 a0 26 11 80 	mov    -0x7feed960(,%eax,4),%ecx
+801022ee:	8d 51 ff             	lea    -0x1(%ecx),%edx
   if(pgrefcount[(v-end)/PGSIZE] == 0 )    //20193062
-80102300:	85 d2                	test   %edx,%edx
+801022f1:	85 d2                	test   %edx,%edx
+
   // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
   
   if(kmem.use_lock)
     acquire(&kmem.lock);
   pgrefcount[(v-end)/PGSIZE]--;  //20193062
-80102302:	89 14 85 a0 26 11 80 	mov    %edx,-0x7feed960(,%eax,4)
+801022f3:	89 14 85 a0 26 11 80 	mov    %edx,-0x7feed960(,%eax,4)
   if(pgrefcount[(v-end)/PGSIZE] == 0 )    //20193062
-80102309:	74 15                	je     80102320 <kfree+0x90>
+801022fa:	74 24                	je     80102320 <kfree+0x90>
     r = (struct run*)v;
     r->next = kmem.freelist;
     kmem.freelist = r;   
   } //20193062 
 
   if(kmem.use_lock)
-8010230b:	a1 94 26 11 80       	mov    0x80112694,%eax
-80102310:	85 c0                	test   %eax,%eax
-80102312:	75 29                	jne    8010233d <kfree+0xad>
+801022fc:	a1 94 26 11 80       	mov    0x80112694,%eax
+80102301:	85 c0                	test   %eax,%eax
+80102303:	75 0b                	jne    80102310 <kfree+0x80>
     release(&kmem.lock);
 }
-80102314:	8b 5d fc             	mov    -0x4(%ebp),%ebx
-80102317:	c9                   	leave  
-80102318:	c3                   	ret    
-80102319:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
-  pgrefcount[(v-end)/PGSIZE]--;  //20193062
-  if(pgrefcount[(v-end)/PGSIZE] == 0 )    //20193062
-  {    //20193062
-    numfreepages++;
-    r = (struct run*)v;
+80102305:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+80102308:	c9                   	leave  
+80102309:	c3                   	ret    
+8010230a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
     r->next = kmem.freelist;
-80102320:	a1 98 26 11 80       	mov    0x80112698,%eax
+    kmem.freelist = r;   
+  } //20193062 
+
   if(kmem.use_lock)
+    release(&kmem.lock);
+80102310:	c7 45 08 60 26 11 80 	movl   $0x80112660,0x8(%ebp)
+}
+80102317:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+8010231a:	c9                   	leave  
+    r->next = kmem.freelist;
+    kmem.freelist = r;   
+  } //20193062 
+
+  if(kmem.use_lock)
+    release(&kmem.lock);
+8010231b:	e9 a0 21 00 00       	jmp    801044c0 <release>
     acquire(&kmem.lock);
   pgrefcount[(v-end)/PGSIZE]--;  //20193062
   if(pgrefcount[(v-end)/PGSIZE] == 0 )    //20193062
   {    //20193062
-    numfreepages++;
-80102325:	83 05 b4 a5 10 80 01 	addl   $0x1,0x8010a5b4
+
+    memset(v, 1, PGSIZE);
+80102320:	83 ec 04             	sub    $0x4,%esp
+80102323:	68 00 10 00 00       	push   $0x1000
+80102328:	6a 01                	push   $0x1
+8010232a:	53                   	push   %ebx
+8010232b:	e8 e0 21 00 00       	call   80104510 <memset>
+    numfreepages++; 
     r = (struct run*)v;
     r->next = kmem.freelist;
-8010232c:	89 03                	mov    %eax,(%ebx)
-    kmem.freelist = r;   
-  } //20193062 
-
-  if(kmem.use_lock)
-8010232e:	a1 94 26 11 80       	mov    0x80112694,%eax
+80102330:	a1 98 26 11 80       	mov    0x80112698,%eax
+  pgrefcount[(v-end)/PGSIZE]--;  //20193062
   if(pgrefcount[(v-end)/PGSIZE] == 0 )    //20193062
   {    //20193062
-    numfreepages++;
+
+    memset(v, 1, PGSIZE);
+    numfreepages++; 
+80102335:	83 05 b4 a5 10 80 01 	addl   $0x1,0x8010a5b4
     r = (struct run*)v;
     r->next = kmem.freelist;
     kmem.freelist = r;   
-80102333:	89 1d 98 26 11 80    	mov    %ebx,0x80112698
-  } //20193062 
+8010233c:	83 c4 10             	add    $0x10,%esp
+  {    //20193062
 
-  if(kmem.use_lock)
-80102339:	85 c0                	test   %eax,%eax
-8010233b:	74 d7                	je     80102314 <kfree+0x84>
-    release(&kmem.lock);
-8010233d:	c7 45 08 60 26 11 80 	movl   $0x80112660,0x8(%ebp)
-}
-80102344:	8b 5d fc             	mov    -0x4(%ebp),%ebx
-80102347:	c9                   	leave  
+    memset(v, 1, PGSIZE);
+    numfreepages++; 
+    r = (struct run*)v;
     r->next = kmem.freelist;
+8010233f:	89 03                	mov    %eax,(%ebx)
     kmem.freelist = r;   
-  } //20193062 
-
-  if(kmem.use_lock)
-    release(&kmem.lock);
-80102348:	e9 73 21 00 00       	jmp    801044c0 <release>
-8010234d:	8d 76 00             	lea    0x0(%esi),%esi
+80102341:	89 1d 98 26 11 80    	mov    %ebx,0x80112698
+80102347:	eb b3                	jmp    801022fc <kfree+0x6c>
+80102349:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+    panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
   
   if(kmem.use_lock)
     acquire(&kmem.lock);
@@ -6396,7 +6396,7 @@ kfree(char *v)
 80102353:	68 60 26 11 80       	push   $0x80112660
 80102358:	e8 83 1f 00 00       	call   801042e0 <acquire>
 8010235d:	83 c4 10             	add    $0x10,%esp
-80102360:	e9 7b ff ff ff       	jmp    801022e0 <kfree+0x50>
+80102360:	e9 6c ff ff ff       	jmp    801022d1 <kfree+0x41>
   struct run *r;
   //uint cur_page_idx =(((uint) v  - (uint)end )/ PGSIZE);	//20139062
 
@@ -6682,51 +6682,51 @@ kalloc(void)
 8010250d:	85 d2                	test   %edx,%edx
 8010250f:	75 57                	jne    80102568 <kalloc+0x68>
     acquire(&kmem.lock);
-  numfreepages--;
   
   r = kmem.freelist;
 80102511:	8b 1d 98 26 11 80    	mov    0x80112698,%ebx
-{
-  struct run *r;
-
-  if(kmem.use_lock)
-    acquire(&kmem.lock);
-  numfreepages--;
-80102517:	83 2d b4 a5 10 80 01 	subl   $0x1,0x8010a5b4
+  
+  if(r)
+80102517:	85 db                	test   %ebx,%ebx
+80102519:	74 07                	je     80102522 <kalloc+0x22>
+      numfreepages--;
+8010251b:	83 2d b4 a5 10 80 01 	subl   $0x1,0x8010a5b4
+      kmem.freelist = r->next;
+80102522:	8b 03                	mov    (%ebx),%eax
+      cprintf("IDX : %d\n",((char*)r - end) >> PGSHIFT);
+80102524:	83 ec 08             	sub    $0x8,%esp
   
   r = kmem.freelist;
-
+  
   if(r)
-8010251e:	85 db                	test   %ebx,%ebx
-80102520:	74 07                	je     80102529 <kalloc+0x29>
-    kmem.freelist = r->next;
-80102522:	8b 03                	mov    (%ebx),%eax
-80102524:	a3 98 26 11 80       	mov    %eax,0x80112698
-    cprintf("%d\n",(uint)r->next - (uint)end);
-80102529:	8b 03                	mov    (%ebx),%eax
-8010252b:	83 ec 08             	sub    $0x8,%esp
+      numfreepages--;
+      kmem.freelist = r->next;
+80102527:	a3 98 26 11 80       	mov    %eax,0x80112698
+      cprintf("IDX : %d\n",((char*)r - end) >> PGSHIFT);
+8010252c:	89 d8                	mov    %ebx,%eax
 8010252e:	2d 48 d5 14 80       	sub    $0x8014d548,%eax
-80102533:	50                   	push   %eax
-80102534:	68 e1 75 10 80       	push   $0x801075e1
-80102539:	e8 22 e1 ff ff       	call   80100660 <cprintf>
+80102533:	c1 f8 0c             	sar    $0xc,%eax
+80102536:	50                   	push   %eax
+80102537:	68 c9 71 10 80       	push   $0x801071c9
+8010253c:	e8 1f e1 ff ff       	call   80100660 <cprintf>
 
   if(kmem.use_lock)
-8010253e:	a1 94 26 11 80       	mov    0x80112694,%eax
-80102543:	83 c4 10             	add    $0x10,%esp
-80102546:	85 c0                	test   %eax,%eax
-80102548:	74 10                	je     8010255a <kalloc+0x5a>
+80102541:	a1 94 26 11 80       	mov    0x80112694,%eax
+80102546:	83 c4 10             	add    $0x10,%esp
+80102549:	85 c0                	test   %eax,%eax
+8010254b:	74 10                	je     8010255d <kalloc+0x5d>
     release(&kmem.lock);
-8010254a:	83 ec 0c             	sub    $0xc,%esp
-8010254d:	68 60 26 11 80       	push   $0x80112660
-80102552:	e8 69 1f 00 00       	call   801044c0 <release>
-80102557:	83 c4 10             	add    $0x10,%esp
+8010254d:	83 ec 0c             	sub    $0xc,%esp
+80102550:	68 60 26 11 80       	push   $0x80112660
+80102555:	e8 66 1f 00 00       	call   801044c0 <release>
+8010255a:	83 c4 10             	add    $0x10,%esp
   return (char*)r;
 }
-8010255a:	89 d8                	mov    %ebx,%eax
-8010255c:	8b 5d fc             	mov    -0x4(%ebp),%ebx
-8010255f:	c9                   	leave  
-80102560:	c3                   	ret    
-80102561:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+8010255d:	89 d8                	mov    %ebx,%eax
+8010255f:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+80102562:	c9                   	leave  
+80102563:	c3                   	ret    
+80102564:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
 kalloc(void)
 {
   struct run *r;

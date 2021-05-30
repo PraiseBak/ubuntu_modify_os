@@ -76,14 +76,15 @@ kfree(char *v)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
   
   if(kmem.use_lock)
     acquire(&kmem.lock);
   pgrefcount[(v-end)/PGSIZE]--;  //20193062
   if(pgrefcount[(v-end)/PGSIZE] == 0 )    //20193062
   {    //20193062
-    numfreepages++;
+
+    memset(v, 1, PGSIZE);
+    numfreepages++; 
     r = (struct run*)v;
     r->next = kmem.freelist;
     kmem.freelist = r;   
@@ -103,13 +104,13 @@ kalloc(void)
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
-  numfreepages--;
   
   r = kmem.freelist;
-
+  
   if(r)
-    kmem.freelist = r->next;
-    cprintf("%d\n",(uint)r->next - (uint)end);
+      numfreepages--;
+      kmem.freelist = r->next;
+      pgrefcount[((char*)r - end) >> PGSHIFT] = 1; //20193062 후에 리턴될 페이지에 해당하는 refcounter를 1로 초기화
 
   if(kmem.use_lock)
     release(&kmem.lock);
