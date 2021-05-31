@@ -54,6 +54,9 @@ freerange(void *vstart, void *vend)
   for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
   {  
     idx = V2P(p) / PGSIZE;  //인덱스 값 갱신
+    //백업
+    kmem.pgrefcount[idx] = 1;   //20193062 0으로하기보다는 1로해서 일단 무조건 빼고 값을 확인해서 하는 식으로함
+
     kmem.pgrefcount[idx] = 1;   //20193062 0으로하기보다는 1로해서 일단 무조건 빼고 값을 확인해서 하는 식으로함
     kfree(p);
   }
@@ -67,19 +70,15 @@ freerange(void *vstart, void *vend)
 void
 kfree(char *v)
 {
-
   struct run *r;
-
-  
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
-
   // Fill with junk to catch dangling refs.
-  
+
+  uint idx = V2P(v) / PGSIZE;   //20193062 몇번째 페이지인지 인덱스 가져오기 위한 변수
   if(kmem.use_lock)
     acquire(&kmem.lock);
-  uint idx = V2P(v) / PGSIZE;   //20193062 몇번째 페이지인지 인덱스 가져오기 위한 변수
-  kmem.pgrefcount[idx]--;  //20193062 우선 값 빼줌
+  
   if(kmem.pgrefcount[idx] == 0)    //20193062 빼준 값이 0이면 freelist에 추가
   {    //20193062
     memset(v, 1, PGSIZE);
@@ -88,7 +87,10 @@ kfree(char *v)
     r->next = kmem.freelist;
     kmem.freelist = r;   
   } //20193062 
-
+  else
+  {
+    kmem.pgrefcount[idx]--;  //20193062 값 빼줌
+  }
   if(kmem.use_lock)
     release(&kmem.lock);
 }
@@ -104,9 +106,7 @@ kalloc(void)
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
-  
   r = kmem.freelist;
-  
   if(r)
       idx = V2P((char *)r) / PGSIZE;  //사용가능한 페이지가 존재하면 인덱스 가져옴
       numfreepages--;
@@ -122,7 +122,6 @@ int freemem(){
 	return numfreepages;
 }
 
-
 uint get_refcounter(uint pa)
 {
     if(pa < V2P(end) || pa >= PHYSTOP) // 20193062 메모리 참조범위 점검
@@ -132,9 +131,7 @@ uint get_refcounter(uint pa)
     uint idx = pa / PGSIZE;    // 20193062  몇번째 페이지인지 가져옴  앞서서 가상주소로 인덱스 변환했는데 이게 더 편한듯
     uint result = 0;    //20193062 결과값 변수
     acquire(&kmem.lock);    // 20193062 잠금걸어서 참조 불가하도록 제한검
-    
     result = kmem.pgrefcount[idx];    // 20193062 해당하는 ref counter 가져옴
-
     release(&kmem.lock);  // 20193062 잠금 해제
     return result;      // 20193062  ref counter 반환
 }
@@ -156,9 +153,6 @@ void dec_refcounter(uint pa)
       kmem.pgrefcount[idx]--;   // 20193062 refcounter 값 빼줌
     }
     release(&kmem.lock);  // 20193062  락 해제
-
-
-
 }
 
 void inc_refcounter(uint pa)

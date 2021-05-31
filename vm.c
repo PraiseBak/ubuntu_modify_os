@@ -335,12 +335,17 @@ copyuvm(pde_t *pgdir, uint sz)
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
+    //20193062 1번째 비트를 바꿔줘야함 
+    *pte = *pte & ~PTE_W;    //20193062 write 비트 하나만 바꿈
     if((mem = kalloc()) == 0)
       goto bad;
     memmove(mem, (char*)P2V(pa), PGSIZE);
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0)
       goto bad;
+    inc_refcounter(pa); //20193062 refcounter 증가함수 호출
   }
+  lcr3(V2P(pgdir)); //20193062 TLB FLUSH
+
   return d;
 
 bad:
@@ -395,4 +400,42 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 // Blank page.
 //PAGEBREAK!
 // Blank page.
+
+//20193062 PAGE FAULT
+void pagefault(void)
+{
+  uint v = 0;   //20193062 가상 주소 변수
+  uint pa = 0;  //20193062 물리 주소 변수
+  uint count = 0; //ref counter 저장변수
+  pte_t * pte;  //페이지 테이블 엔트리
+  char * mem;   // 새 페이지 할당 및 복사 위한 변수
+  v = rcr2();   //20193062 page fault 일어난 주소 찾아줌
+  pa = V2P(v);  //20193062 가상 -> 물리로 변환
+  if((pte = walkpgdir(proc->pgdir, (void *) v, 0)) == 0 || //20193062 PTE를 가져오는데 실패하거나, valid 비트가 0인 경우 예외처리
+  (PTE_P & *pte) == 0)  //20193062 PTE를 가져오는데 실패하거나, valid 비트가 0인 경우 예외처리
+  {     //20193062 
+    cprintf("pagefault 1");   //20193062 알람출략
+  }     //20193062 
+  count = get_refcounter(pa);
+  if(count > 1)
+  {
+    if((mem = kalloc()) == 0)
+    {
+      panic("pagefault 2");
+    }
+    memmove(mem, (char*)P2V(pa), PGSIZE);
+    *pte = V2P(mem) | PTE_P | PTE_U | PTE_W;
+    dec_refcounter(pa);
+  }
+  else
+  {
+    *pte |= PTE_W;
+  }
+  lcr3(V2P(proc->pgdir));
+} 
+
+
+
+
+
 

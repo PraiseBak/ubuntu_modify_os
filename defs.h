@@ -69,6 +69,11 @@ void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
 int freemem(void);
+void inc_refcounter(uint);  //20193062 vm.c 등에서 호출할 수 있게 명시
+void dec_refcounter(uint);  //20193062 vm.c 등에서 호출할 수 있게 명시
+uint get_refcounter(uint);  //20193062 vm.c 등에서 호출할 수 있게 명시
+
+
 
 // kbd.c
 void            kbdintr(void);
